@@ -9,11 +9,13 @@ async function main(){
         initializer: "initialize",
     });
 
-    await majorContract.waitForDeployment();
-    console.log("Major Validator contract deployed to : ",await rwaContract.getAddress());
+    await rwaContract.waitForDeployment();
+    console.log("RWA contract deployed to : ",await rwaContract.getAddress());
 }
 
 main().catch((error) => {
     console.error(error);
     process.exitCode = 1;
 });
+//0x8D38dAc6e5b854a8699d2d428755577E4e338A91.
+//0x2dd55F9c8bE4186B2BEb1F691cE45F40c21c5911

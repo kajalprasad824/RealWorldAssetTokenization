@@ -34,11 +34,13 @@ contract RWA is
      */
     
     function mint(
+        address _seller,
         uint256 amount,
         bytes memory data
     ) public onlyOwner {
         nftId++;
-        _mint(address(this), nftId, amount, data);
+        _mint(_seller, nftId, amount, data);
+        _safeTransferFrom(_seller, address(this), nftId, amount, "0x00");
     }
 
     function mintBatch(
@@ -70,6 +72,14 @@ contract RWA is
         require(_USDTAmount != 0 && _nftAmount!= 0,"NFT Price and amount cannot be equal to zero");
         safeTransferFrom(address(this), _toNFT, _nftId, _nftAmount, "0x00");
         IERC20(_cryptoAddress).transferFrom(_toNFT, _toAmount, _USDTAmount);
+    }
+
+    function transferStuckNFT(
+        address _seller,
+        uint256 _nftId,
+        uint256 _nftAmount
+    ) public onlyOwner {
+        _safeTransferFrom(address(this), _seller, _nftId, _nftAmount, "0x00");
     }
 
     // The following functions are overrides required by Solidity.
