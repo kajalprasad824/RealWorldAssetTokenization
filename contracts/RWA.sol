@@ -70,7 +70,7 @@ contract RWA is
         uint256 _USDTAmount
     ) public {
         require(_USDTAmount != 0 && _nftAmount!= 0,"NFT Price and amount cannot be equal to zero");
-        safeTransferFrom(address(this), _toNFT, _nftId, _nftAmount, "0x00");
+        _safeTransferFrom(address(this), _toNFT, _nftId, _nftAmount, "0x00");
         IERC20(_cryptoAddress).transferFrom(_toNFT, _toAmount, _USDTAmount);
     }
 
