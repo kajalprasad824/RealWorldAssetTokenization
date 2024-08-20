@@ -39,7 +39,7 @@ contract RWA is
         uint256 _payoutAmount;
         StackingTime _stackOptions;
     }
-    //["0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2","0x0000000000000000000000000000000000000000","1","2","2000000000000000000",0]
+    //["0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2","0xd457540c3f08f7F759206B5eA9a4cBa321dE60DC","1","4","4000000",3]
 
     struct StackInfo {
         uint256 _stackId;
@@ -50,7 +50,8 @@ contract RWA is
         StackingTime stackOptions;
     }
 
-    //["1","0","1000000000000000000","0x0000000000000000000000000000000000000000","0","0"];
+    //["1","0","1000000","0x7FDc955b5E2547CC67759eDba3fd5d7027b9Bd66","0","0"];
+    //["1","0","1000000","0xd457540c3f08f7F759206B5eA9a4cBa321dE60DC","1","0"];
 
     struct UserInfo {
         uint256 _nftId;
@@ -88,10 +89,6 @@ contract RWA is
         __Ownable_init(initialOwner);
     }
 
-    receive() external payable {}
-
-    fallback() external payable{}
-
     /**
      @dev minting of NFT's will takes place by calling this function
      nftId value will increment after every call
@@ -107,29 +104,19 @@ contract RWA is
 
     /* 
      @dev function to call to buy the NFT's
-     @param _toNFT buyer address where the NFT will go
-     @param _toAmount Seller address where the money will go
-     @param _cryptoaddress for now USDT address
-     @param _nftId the token id of NFT
-     @param _nftAmount the amount of given token id
-     @param _USDTAmount how much USDT should buyer pay
     */
 
-    function buy(BuyInfo memory _buy) public payable {
+    function buy(BuyInfo memory _buy) public {
         require(
             _buy._payoutAmount != 0 && _buy._nftAmount != 0,
             "NFT Price and amount cannot be equal to zero"
         );
 
-        if (_buy._payoutCurrency == address(0)) {
-            payable(_buy._seller).transfer(_buy._payoutAmount);
-        } else {
-            IERC20(_buy._payoutCurrency).transferFrom(
-                msg.sender,
-                _buy._seller,
-                _buy._payoutAmount
-            );
-        }
+        IERC20(_buy._payoutCurrency).transferFrom(
+            msg.sender,
+            _buy._seller,
+            _buy._payoutAmount
+        );
 
         _safeTransferFrom(
             address(this),
@@ -138,14 +125,13 @@ contract RWA is
             _buy._nftAmount,
             "0x00"
         );
-        _stacking(
-                _buy._nftId,
-                _buy._nftAmount,
-                _buy._stackOptions
-            );
+        _stacking(_buy._nftId, _buy._nftAmount, _buy._stackOptions);
         emit Buy(_buy._nftId, _buy._nftAmount, _buy._seller, msg.sender);
     }
 
+    /*
+        @dev function to call at the time of unstacking 
+    */
     function unstack(StackInfo memory _stackInfo) public {
         UserInfo storage user = userInfo[msg.sender][_stackInfo._stackId];
         require(
@@ -162,9 +148,12 @@ contract RWA is
         );
         require(user._complete == false, "This unstacking is already complete");
 
-        if(_stackInfo.rewardCurrency == address(0)){
-            payable(msg.sender).transfer(_stackInfo.rewardAmount);
-        }
+        //reward amount
+        IERC20(_stackInfo.rewardCurrency).transferFrom(
+            owner(),
+            msg.sender,          
+            _stackInfo.rewardAmount
+        );
 
         _safeTransferFrom(
             address(this),
@@ -180,6 +169,11 @@ contract RWA is
                 "All withdraw option selected, so NFT amount should be zero"
             );
         } else {
+
+            require(
+                _stackInfo._nftAmount != 0,
+                "All withdraw option not selected, so NFT amount should not be zero"
+            );
             _stacking(
                 user._nftId,
                 _stackInfo._nftAmount,
@@ -232,11 +226,19 @@ contract RWA is
         );
     }
 
-    function sellerNFTId(address _seller) public view returns(uint[] memory){
+    function sellerNFTId(address _seller)
+        public
+        view
+        returns (uint256[] memory)
+    {
         return sellerAllNFTId[_seller];
     }
 
-    function buyerStackId(address _buyer) public view returns(uint[] memory){
+    function buyerStackId(address _buyer)
+        public
+        view
+        returns (uint256[] memory)
+    {
         return buyerAllStackId[_buyer];
     }
 
